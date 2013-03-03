@@ -8,29 +8,37 @@ var nonPlayoffColor = 'black';
 
 
 $.getJSON('static/data.json', function(data) {
-    renderStandings(data[0],data[6]);
-});
-
-function renderStandings(left,right){
 	
-	var conference = 'westernConference';
-	var leftDate = left.date;
-	var rightDate = right.date;
-
+	var leftData = data[3];
+	var rightData = data[6];
 	
 	//sets up the basic container for the visualization
-	var chart = d3.select("#standings").append("svg")
+	var westChart = d3.select("#westStandings").append("svg")
 	     .attr("width", graphWidth)
 	     .attr("height", graphHeight);
 	
+	var eastChart = d3.select("#eastStandings").append("svg")
+		     .attr("width", graphWidth)
+		     .attr("height", graphHeight);
+	
+    renderStandings(westChart,leftData,rightData,{'key':'westernConference','title':'Western Conference'});
+    renderStandings(eastChart,leftData,rightData,{'key':'easternConference','title':'Eastern Conference'});
+});
+
+function renderStandings(chart,left,right,conferenceName){
+	
+	var conference = conferenceName.key;
+	var leftDate = left.date;
+	var rightDate = right.date;
+
 		//add a title based on the conference and dates
 		var titleGroup = chart.append("g");
 		
 		titleGroup.append('text')
-			.attr('x', 190)
+			.attr('x', 195)
 			.attr('y', 20)
 			.attr('font-family',fontFamily)
-			.text('Western Conference');
+			.text(conferenceName.title);
 		
 		//left hand date	
 		titleGroup.append('text')

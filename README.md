@@ -17,7 +17,6 @@ Nathan Stehr - [laserdeathstehr.com](http://laserdeathstehr.com)
 
 ##TODO
 
-* Ability to switch conferences (currently hardcoded to Western Conference)
 * Ability to change start and end dates
 * Transition animations when changing dates 
 * Tweak layout algorithm
