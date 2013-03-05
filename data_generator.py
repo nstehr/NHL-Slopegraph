@@ -1,6 +1,6 @@
 #Nathan Stehr
 #Utility script that parses weekly standings from http://www.shrpsports.com/nhl/ into move javascript 
-#friend JSON
+#friendly JSON
 #February 27, 2013
 
 import urllib2

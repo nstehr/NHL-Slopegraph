@@ -9,10 +9,10 @@ var nonPlayoffColor = 'black';
 
 $.getJSON('static/data.json', function(data) {
 	
-	var leftData = data[3];
+	var leftData = data[0];
 	var rightData = data[6];
 	
-	//sets up the basic container for the visualization
+	//sets up the basic containers for the visualization
 	var westChart = d3.select("#westStandings").append("svg")
 	     .attr("width", graphWidth)
 	     .attr("height", graphHeight);
@@ -23,6 +23,24 @@ $.getJSON('static/data.json', function(data) {
 	
     renderStandings(westChart,leftData,rightData,{'key':'westernConference','title':'Western Conference'});
     renderStandings(eastChart,leftData,rightData,{'key':'easternConference','title':'Eastern Conference'});
+
+	var i = 1;                     
+
+    //dummy animation to test transitions.  Going forward need to add controls
+	function animate() {           
+	   setTimeout(function () {    
+	      leftData = data[i];
+	      renderStandings(eastChart,leftData,rightData,{'key':'easternConference','title':'Eastern Conference'});         
+	      i++;                     
+	      if (i < 6) {            
+	         animate();              
+	      }                        
+	   }, 2000)
+	}
+
+	animate();
+
+   	
 });
 
 function renderStandings(chart,left,right,conferenceName){
@@ -31,30 +49,48 @@ function renderStandings(chart,left,right,conferenceName){
 	var leftDate = left.date;
 	var rightDate = right.date;
 
+
+       
+        var titleGroup = chart.select('.titleGroup')
 		//add a title based on the conference and dates
-		var titleGroup = chart.append("g");
-		
-		titleGroup.append('text')
-			.attr('x', 195)
-			.attr('y', 20)
-			.attr('font-family',fontFamily)
-			.text(conferenceName.title);
-		
-		//left hand date	
-		titleGroup.append('text')
-				.attr('x', 100)
+		if(titleGroup.empty()){
+		    titleGroup = chart.append("g");
+		    titleGroup.attr('class','titleGroup');
+		    titleGroup.append('text')
+				.attr('x', 195)
+				.attr('y', 20)
+				.attr('id','conference')
+				.attr('font-family',fontFamily)
+				.text(conferenceName.title);
+				
+		    //left hand date	
+		     titleGroup.append('text')
+		         .attr('x', 100)
+				 .attr('y', 20)
+				 .attr('font-family',fontFamily)
+				 .attr('font-size',13)
+				 .attr('id','leftDate')
+				 .text(leftDate);
+
+			//right hand date
+			 titleGroup.append('text')
+			    .attr('x', 400)
 				.attr('y', 20)
 				.attr('font-family',fontFamily)
 				.attr('font-size',13)
-				.text(leftDate);
+				.attr('id','rightDate')
+				.text(rightDate);
+		}
+		//if the title group exists, just change the text values
+		else{
+			titleGroup.select('#conference').text(conferenceName.title);
+			titleGroup.select('#leftDate').text(leftDate);
+			titleGroup.select('#rightDate').text(rightDate);
+		}
 		
-		//right hand date
-		titleGroup.append('text')
-					.attr('x', 400)
-					.attr('y', 20)
-					.attr('font-family',fontFamily)
-					.attr('font-size',13)
-					.text(rightDate);
+		
+		
+	
 	
 	//get all the points into arrays
 	var conferencePointsLeft = $.map(left[conference],function(value,index){
@@ -91,47 +127,88 @@ function renderStandings(chart,left,right,conferenceName){
     adjustYCoords(left[conference]);
     adjustYCoords(right[conference]); 	
 					
-	var leftGroup = chart.append("g");
-	leftGroup.selectAll("text")                                     
-	         .data(left[conference])
+	var leftGroup = chart.select('.leftGroup');
+	if(leftGroup.empty()){
+		leftGroup = chart.append("g");
+		leftGroup.attr("class","leftGroup");
+	}
+	
+	//select any teams if there are any
+	var leftTeams = leftGroup.selectAll("text").data(left[conference],function(d) { return d.team; });
+	
+	//add teams if necessary
+	leftTeams
 	         .enter().append("text")
 			 .attr("x",100)
-			 .attr('y', function(d,i){return d.yCoord;})
 			 .attr('font-family',fontFamily)
 			 .attr('font-size',fontSize)
-			 .attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout
+			 .attr('y', function(d,i){return d.yCoord;})
 			 .text(function(d, i) { return d.team; });
 			
-	var leftGroupPoints = chart.append("g");
-	leftGroupPoints.selectAll("text")                                     
-	        .data(left[conference])
-			.enter().append("text")
-			.attr("x",200)
-			.attr('y', function(d,i){return d.yCoord})
-			.attr('font-family',fontFamily) 
-			.attr('font-size',fontSize)         
-			.text(function(d, i) { return d.points; });
+	//update the y position and playoff coloring		
+	leftTeams.attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout
+			.transition()
+			.duration(750) 
+			.attr('y', function(d,i){return d.yCoord;});
 			
-	var rightGroup = chart.append("g");
-	rightGroup.selectAll("text")                                     
-	      .data(right[conference])
-		  .enter().append("text")
+	
+	//for all the other groups follow the same pattern as above: select, add/enter, update		
+	var leftPointsGroup = chart.select('.leftGroupPoints');
+	if(leftPointsGroup.empty()){
+		leftPointsGroup = chart.append("g");
+		leftPointsGroup.attr("class","leftGroupPoints");
+	}
+
+    var leftPoints = leftPointsGroup.selectAll("text").data(left[conference]);
+    leftPoints.enter().append("text")
+              .attr("x",200)
+              .attr('y', function(d,i){return d.yCoord})
+              .attr('font-family',fontFamily) 
+			  .attr('font-size',fontSize);
+
+	leftPoints.text(function(d, i) { return d.points; })
+	         .transition()
+	         .duration(750)
+	         .attr('y', function(d,i){return d.yCoord});
+			
+	var rightGroup = chart.select('.rightGroup');
+	if(rightGroup.empty()){
+		rightGroup = chart.append("g");
+		rightGroup.attr("class","rightGroup");
+	}
+	
+	//setup the right side teams and points
+	var rightTeams = rightGroup.selectAll("text").data(right[conference],function(d) { return d.team; });
+	
+		  rightTeams.enter().append("text")
 		  .attr("x",400)
-		  .attr('y', function(d,i){return d.yCoord;})
 		  .attr('font-family',fontFamily)
 		  .attr('font-size',fontSize)
-		  .attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout          
+		  .attr('y', function(d,i){return d.yCoord;})
 		  .text(function(d, i) { return d.team; });
 		
-	var rightGroupPoints = chart.append("g");
-	rightGroupPoints.selectAll("text")                                     
-	     .data(right[conference])
-	     .enter().append("text")
-	     .attr("x",350)
-	     .attr('y', function(d,i){return d.yCoord})
-	     .attr('font-family',fontFamily)
-	     .attr('font-size',fontSize)  
-	     .text(function(d, i) { return d.points; });
+	rightTeams.attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout
+				.transition()
+				.duration(750) 
+				.attr('y', function(d,i){return d.yCoord;});
+		
+	var rightPointsGroup = chart.select('.rightGroupPoints');
+		if(rightPointsGroup.empty()){
+		   rightPointsGroup = chart.append("g");
+		   rightPointsGroup.attr("class","rightGroupPoints");
+		 }
+
+	var rightPoints = rightPointsGroup.selectAll("text").data(right[conference]);
+		rightPoints.enter().append("text")
+		    .attr("x",350)
+		    .attr('y', function(d,i){return d.yCoord})
+			.attr('font-family',fontFamily) 
+			.attr('font-size',fontSize);
+
+	 rightPoints.text(function(d, i) { return d.points; })
+			.transition()
+			.duration(750)
+			.attr('y', function(d,i){return d.yCoord});
 	
 	
 	//combine the coord values for drawing the slopes
@@ -143,6 +220,7 @@ function renderStandings(chart,left,right,conferenceName){
 		for(var j=0;j<right[conference].length;j++){
 			if(val.team === right[conference][j].team){
 				slope.right = right[conference][j].yCoord;
+				slope.team = right[conference][j].team;
 				break;
 			}	
 		}
@@ -150,35 +228,59 @@ function renderStandings(chart,left,right,conferenceName){
 	}
 	
 	
-	var slopeGroup = chart.append("g");
-	slopeGroup.selectAll("line")
-	     .data(slopes)
-	     .enter().append("line")
-	     .attr('x1', 215)
-		 .attr('x2', 345)
-		 .attr('y1',function(d,i){return d.left - (teamBuffer/2);})
+	var slopeGroup = chart.select('.slopeGroup');
+	if(slopeGroup.empty()){
+		slopeGroup = chart.append("g");
+		slopeGroup.attr("class","slopeGroup");
+	}
+	
+	var slopeLines = slopeGroup.selectAll("line").data(slopes,function(d){return d.team});
+
+	 slopeLines.enter().append("line")
+	    .attr('x1', 215)
+		.attr('x2', 345)
+		.attr('y1',function(d,i){return d.left - (teamBuffer/2);})
 		.attr('y2',function(d,i){return d.right - (teamBuffer/2);})
 		.attr('opacity', .5)
 		.attr('stroke', 'black');	
+	
+	slopeLines.transition().duration(750)
+	                       .attr('y1',function(d,i){return d.left - (teamBuffer/2);})
+	                       .attr('y2',function(d,i){return d.right - (teamBuffer/2);});
 		
 		
-	var leftEndPointGroup = chart.append("g");
-	leftEndPointGroup.selectAll("path")
-		.data(slopes)
+	var leftEndPointGroup = chart.select('.leftEndPointsGroup');
+	if(leftEndPointGroup.empty()){
+		leftEndPointGroup = chart.append("g");
+		leftEndPointGroup.attr("class","leftEndPointsGroup");
+	}
+	var leftEndPoints = leftEndPointGroup.selectAll("path").data(slopes,function(d){return d.team});
+	
+	leftEndPoints
 		.enter().append("path")
-		.attr("transform", function(d) { return "translate(215," + (d.left-(teamBuffer/2)) + ")"; })
 		.attr("d", d3.svg.symbol()
 		.size(function(d) { return 20; })
-		.type(function(d) { return "circle"; }));
-			
-		var rightEndPointGroup = chart.append("g");
-		rightEndPointGroup.selectAll("path")
-		   .data(slopes)
-		   .enter().append("path")
-		   .attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; })
-		   .attr("d", d3.svg.symbol()
-		   .size(function(d) { return 20; })
-		   .type(function(d) { return "circle"; }));
+		.type(function(d) { return "circle"; }))
+		.attr("transform", function(d) { return "translate(215," + (d.left-(teamBuffer/2)) + ")"; });
+		
+	leftEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(215," + (d.left-(teamBuffer/2)) + ")"; });
+	
+
+	var rightEndPointGroup = chart.select('.rightEndPointsGroup');
+	if(rightEndPointGroup.empty()){
+		rightEndPointGroup = chart.append("g");
+		rightEndPointGroup.attr("class","rightEndPointsGroup");
+	}
+	var rightEndPoints = rightEndPointGroup.selectAll("path").data(slopes,function(d){return d.team});
+	
+	rightEndPoints
+		.enter().append("path")
+		.attr("d", d3.svg.symbol()
+		.size(function(d) { return 20; })
+		.type(function(d) { return "circle"; }))
+		.attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
+		
+	rightEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
 		
 
 }
