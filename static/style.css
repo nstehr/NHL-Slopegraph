@@ -1,4 +1,4 @@
-.viz {
+.panel {
     float: left;
     width: 50%;
     padding: 10px;
@@ -7,4 +7,12 @@
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     
+}
+
+.playoff {
+	color: crimson;
+}
+
+p,h2{
+	font-family: 'Asap',sans-serif;
 }

@@ -1,49 +1,64 @@
 var graphWidth = 500; 
 var graphHeight = 600;
 var teamBuffer = 15;
-var fontFamily = 'Julius Sans One';
+var transitionDuration = 750;
 var fontSize = 12;
+var fontFamily = 'Julius Sans One';
 var playoffColor = 'crimson';
 var nonPlayoffColor = 'black';
 
 
 $.getJSON('static/data.json', function(data) {
 	
+	var dates = $.map(data,function(value,index){return value['date']});
+	$.each(dates, function(key, value) {   
+	     $('#rightDateSelect')
+	          .append($('<option>', { value : key })
+	          .text(value)); 
+	     	$('#leftDateSelect')
+		          .append($('<option>', { value : key })
+		          .text(value));
+	});
+	
+	//callback for listening to when the date selects change
+	var onSelectChanged = function(){
+	    var leftIndex = $('#leftDateSelect').val();
+	    var rightIndex = $('#rightDateSelect').val();
+	    if(leftIndex <= rightIndex){
+	        var leftData = data[leftIndex];
+	        var rightData = data[rightIndex];
+	        var conferenceKey = $('#conferenceSelect').val();
+	        var conferenceText = $("#conferenceSelect option:selected").text();
+	  
+	        renderStandings(chart,leftData,rightData,{'key':conferenceKey,'title':conferenceText});
+	    }
+	}
+	
+	$('#leftDateSelect').change(onSelectChanged);
+	$('#rightDateSelect').change(onSelectChanged);
+	$('#conferenceSelect').change(onSelectChanged);
+	
+	//set the left select to initially be the lowest date
+	$('#leftDateSelect').val(0);
+	//set the right select to initially be the highest date
+	$('#rightDateSelect').val(dates.length-1);
+	
 	var leftData = data[0];
-	var rightData = data[6];
+	var rightData = data[dates.length-1];
 	
 	//sets up the basic containers for the visualization
-	var westChart = d3.select("#westStandings").append("svg")
+	var chart = d3.select("#slopegraph").append("svg")
 	     .attr("width", graphWidth)
 	     .attr("height", graphHeight);
-	
-	var eastChart = d3.select("#eastStandings").append("svg")
-		     .attr("width", graphWidth)
-		     .attr("height", graphHeight);
-	
-    renderStandings(westChart,leftData,rightData,{'key':'westernConference','title':'Western Conference'});
-    renderStandings(eastChart,leftData,rightData,{'key':'easternConference','title':'Eastern Conference'});
 
-	var i = 1;                     
+	//initial rendering of the graph
+    renderStandings(chart,leftData,rightData,{'key':'westernConference','title':'Western Conference'});
+    
 
-    //dummy animation to test transitions.  Going forward need to add controls
-	function animate() {           
-	   setTimeout(function () {    
-	      leftData = data[i];
-	      renderStandings(eastChart,leftData,rightData,{'key':'easternConference','title':'Eastern Conference'});         
-	      i++;                     
-	      if (i < 6) {            
-	         animate();              
-	      }                        
-	   }, 2000)
-	}
-
-	animate();
-
-   	
 });
 
 function renderStandings(chart,left,right,conferenceName){
+	
 	
 	var conference = conferenceName.key;
 	var leftDate = left.date;
@@ -119,11 +134,12 @@ function renderStandings(chart,left,right,conferenceName){
 		val.yCoord = rightY(val.points);
 	}
 	
-	//to account for the fact that it is highly likely that
-	//teams can have the same number of points, and 
-	//that close point values might translate coords
-	//that cause overlapping text, apply a simple
-	//algorithm to adjust the positions to look nice
+	/* to account for the fact that it is highly likely that
+	* teams can have the same number of points, and 
+	* that close point values might translate coords
+	* that cause overlapping text, apply a simple
+	* algorithm to adjust the positions to look nice
+	*/
     adjustYCoords(left[conference]);
     adjustYCoords(right[conference]); 	
 					
@@ -133,7 +149,13 @@ function renderStandings(chart,left,right,conferenceName){
 		leftGroup.attr("class","leftGroup");
 	}
 	
-	//select any teams if there are any
+	/* select any teams if there are any
+	*
+	* NOTE: the the function that is the argument to 'data'
+	* is key for doing updates. This sets up a data key
+	* so that when an update is performed, it can find existing elements
+	*
+	*/
 	var leftTeams = leftGroup.selectAll("text").data(left[conference],function(d) { return d.team; });
 	
 	//add teams if necessary
@@ -148,9 +170,10 @@ function renderStandings(chart,left,right,conferenceName){
 	//update the y position and playoff coloring		
 	leftTeams.attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout
 			.transition()
-			.duration(750) 
+			.duration(transitionDuration)
 			.attr('y', function(d,i){return d.yCoord;});
 			
+	leftTeams.exit().remove();
 	
 	//for all the other groups follow the same pattern as above: select, add/enter, update		
 	var leftPointsGroup = chart.select('.leftGroupPoints');
@@ -167,9 +190,9 @@ function renderStandings(chart,left,right,conferenceName){
 			  .attr('font-size',fontSize);
 
 	leftPoints.text(function(d, i) { return d.points; })
-	         .transition()
-	         .duration(750)
 	         .attr('y', function(d,i){return d.yCoord});
+	
+	leftPoints.exit().remove();
 			
 	var rightGroup = chart.select('.rightGroup');
 	if(rightGroup.empty()){
@@ -189,8 +212,9 @@ function renderStandings(chart,left,right,conferenceName){
 		
 	rightTeams.attr('fill',function(d,i){if(i<8) return playoffColor;else return nonPlayoffColor;}) //make the playoff bound teams standout
 				.transition()
-				.duration(750) 
+				.duration(transitionDuration)
 				.attr('y', function(d,i){return d.yCoord;});
+	rightTeams.exit().remove();
 		
 	var rightPointsGroup = chart.select('.rightGroupPoints');
 		if(rightPointsGroup.empty()){
@@ -206,10 +230,8 @@ function renderStandings(chart,left,right,conferenceName){
 			.attr('font-size',fontSize);
 
 	 rightPoints.text(function(d, i) { return d.points; })
-			.transition()
-			.duration(750)
 			.attr('y', function(d,i){return d.yCoord});
-	
+	 rightPoints.exit().remove();
 	
 	//combine the coord values for drawing the slopes
 	var slopes = [];
@@ -237,7 +259,7 @@ function renderStandings(chart,left,right,conferenceName){
 	var slopeLines = slopeGroup.selectAll("line").data(slopes,function(d){return d.team});
 
 	 slopeLines.enter().append("line")
-	    .attr('x1', 215)
+	    .attr('x1', 220)
 		.attr('x2', 345)
 		.attr('y1',function(d,i){return d.left - (teamBuffer/2);})
 		.attr('y2',function(d,i){return d.right - (teamBuffer/2);})
@@ -248,6 +270,7 @@ function renderStandings(chart,left,right,conferenceName){
 	                       .attr('y1',function(d,i){return d.left - (teamBuffer/2);})
 	                       .attr('y2',function(d,i){return d.right - (teamBuffer/2);});
 		
+	slopeLines.exit().remove();
 		
 	var leftEndPointGroup = chart.select('.leftEndPointsGroup');
 	if(leftEndPointGroup.empty()){
@@ -261,11 +284,12 @@ function renderStandings(chart,left,right,conferenceName){
 		.attr("d", d3.svg.symbol()
 		.size(function(d) { return 20; })
 		.type(function(d) { return "circle"; }))
-		.attr("transform", function(d) { return "translate(215," + (d.left-(teamBuffer/2)) + ")"; });
+		.attr("transform", function(d) { return "translate(220," + (d.left-(teamBuffer/2)) + ")"; });
 		
-	leftEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(215," + (d.left-(teamBuffer/2)) + ")"; });
+	leftEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(220," + (d.left-(teamBuffer/2)) + ")"; });
 	
-
+	leftEndPoints.exit().remove();
+    
 	var rightEndPointGroup = chart.select('.rightEndPointsGroup');
 	if(rightEndPointGroup.empty()){
 		rightEndPointGroup = chart.append("g");
@@ -281,7 +305,8 @@ function renderStandings(chart,left,right,conferenceName){
 		.attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
 		
 	rightEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
-		
+	
+	rightEndPoints.exit().remove();
 
 }
 
@@ -299,4 +324,6 @@ function adjustYCoords(conference){
 			}
 		}
 	}
+	
+
 }

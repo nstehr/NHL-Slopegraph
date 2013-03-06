@@ -19,7 +19,5 @@ Nathan Stehr - [laserdeathstehr.com](http://laserdeathstehr.com)
 
 ##TODO
 
-* Ability to change start and end dates
-* Transition animations when changing dates 
 * Tweak layout algorithm
 * Fix magic numbers in visualize.js code
