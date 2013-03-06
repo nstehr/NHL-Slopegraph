@@ -46,7 +46,7 @@ $.getJSON('static/data.json', function(data) {
 	var leftData = data[0];
 	var rightData = data[dates.length-1];
 	
-	//sets up the basic containers for the visualization
+	//sets up the basic container for the visualization
 	var chart = d3.select("#slopegraph").append("svg")
 	     .attr("width", graphWidth)
 	     .attr("height", graphHeight);
@@ -172,10 +172,11 @@ function renderStandings(chart,left,right,conferenceName){
 			.transition()
 			.duration(transitionDuration)
 			.attr('y', function(d,i){return d.yCoord;});
-			
+	
+	//remove teams if necessary		
 	leftTeams.exit().remove();
 	
-	//for all the other groups follow the same pattern as above: select, add/enter, update		
+	//for all the other groups follow the same pattern as above: select, add/enter, update, exit/delete		
 	var leftPointsGroup = chart.select('.leftGroupPoints');
 	if(leftPointsGroup.empty()){
 		leftPointsGroup = chart.append("g");
