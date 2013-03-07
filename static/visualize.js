@@ -183,7 +183,7 @@ function renderStandings(chart,left,right,conferenceName){
 		leftPointsGroup.attr("class","leftGroupPoints");
 	}
 
-    var leftPoints = leftPointsGroup.selectAll("text").data(left[conference]);
+    var leftPoints = leftPointsGroup.selectAll("text").data(left[conference],function(d) { return d.team; });
     leftPoints.enter().append("text")
               .attr("x",200)
               .attr('y', function(d,i){return d.yCoord})
@@ -191,6 +191,8 @@ function renderStandings(chart,left,right,conferenceName){
 			  .attr('font-size',fontSize);
 
 	leftPoints.text(function(d, i) { return d.points; })
+	         .transition()
+			 .duration(transitionDuration)
 	         .attr('y', function(d,i){return d.yCoord});
 	
 	leftPoints.exit().remove();
@@ -223,14 +225,16 @@ function renderStandings(chart,left,right,conferenceName){
 		   rightPointsGroup.attr("class","rightGroupPoints");
 		 }
 
-	var rightPoints = rightPointsGroup.selectAll("text").data(right[conference]);
+	var rightPoints = rightPointsGroup.selectAll("text").data(right[conference],function(d) { return d.team; });
 		rightPoints.enter().append("text")
 		    .attr("x",350)
 		    .attr('y', function(d,i){return d.yCoord})
-			.attr('font-family',fontFamily) 
+			.attr('font-family',fontFamily)
 			.attr('font-size',fontSize);
 
 	 rightPoints.text(function(d, i) { return d.points; })
+	        .transition()
+			.duration(transitionDuration)
 			.attr('y', function(d,i){return d.yCoord});
 	 rightPoints.exit().remove();
 	
