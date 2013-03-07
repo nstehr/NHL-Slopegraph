@@ -291,7 +291,7 @@ function renderStandings(chart,left,right,conferenceName){
 		.type(function(d) { return "circle"; }))
 		.attr("transform", function(d) { return "translate(220," + (d.left-(teamBuffer/2)) + ")"; });
 		
-	leftEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(220," + (d.left-(teamBuffer/2)) + ")"; });
+	leftEndPoints.transition().duration(transitionDuration).attr("transform", function(d) { return "translate(220," + (d.left-(teamBuffer/2)) + ")"; });
 	
 	leftEndPoints.exit().remove();
     
@@ -309,7 +309,7 @@ function renderStandings(chart,left,right,conferenceName){
 		.type(function(d) { return "circle"; }))
 		.attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
 		
-	rightEndPoints.transition().duration(750).attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
+	rightEndPoints.transition().duration(transitionDuration).attr("transform", function(d) { return "translate(345," + (d.right-(teamBuffer/2)) + ")"; });
 	
 	rightEndPoints.exit().remove();
 
