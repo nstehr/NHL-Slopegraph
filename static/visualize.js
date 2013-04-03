@@ -24,7 +24,7 @@ $.getJSON('static/data.json', function(data) {
 	var onSelectChanged = function(){
 	    var leftIndex = $('#leftDateSelect').val();
 	    var rightIndex = $('#rightDateSelect').val();
-	    if(leftIndex <= rightIndex){
+	    if(parseInt(leftIndex) <= parseInt(rightIndex)){
 	        var leftData = data[leftIndex];
 	        var rightData = data[rightIndex];
 	        var conferenceKey = $('#conferenceSelect').val();
